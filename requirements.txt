@@ -1,0 +1,6 @@
+pyarrow
+pandas
+fsspec
+huggingface_hub
+langchain
+langchain-community
