@@ -2,6 +2,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
 
 
+
 def load_pipeline(modl_name):
     model = AutoModelForCausalLM.from_pretrained("llms/" + modl_name,
                                              device_map="auto",
