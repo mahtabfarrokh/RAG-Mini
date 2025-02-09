@@ -38,3 +38,14 @@ def llama3_prompt_qa() -> PromptTemplate:
     return PromptTemplate(template=prompt, input_variables=["context", "question"])
 
 
+def load_prompt(model_name: str) -> PromptTemplate: 
+    """
+    Returns the correct prompt for the model name.
+    """
+    # todo add llama 2 prompt and mixtral prompt
+    if model_name.lower().find("mistral") >=0 or model_name.lower().find("mixtral") >=0:
+        return mistral_prompt_qa()
+    elif model_name.lower().find("llama-3") >=0 :
+        return llama3_prompt_qa()
+    else:
+        raise ValueError("Model name not supported")

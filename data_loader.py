@@ -8,7 +8,7 @@ import pandas as pd
 
 
 
-def load_passages()->tuple[EnsembleRetriever, list[Document]]:
+def load_passages()->EnsembleRetriever:
     """
     Loads passages, chunks them, loads in vector db, returns ensemble retriever
     """
@@ -21,7 +21,7 @@ def load_passages()->tuple[EnsembleRetriever, list[Document]]:
         doc = Document(page_content=passages["passage"][i], metadata={"id": passages["id"][i]})
         all_documents.append(doc)
 
-    print(len(all_documents))
+    print("Number of passages to load in the database: ", len(all_documents))
 
     text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=50)
     chunked_documents = text_splitter.split_documents(all_documents)
@@ -29,8 +29,7 @@ def load_passages()->tuple[EnsembleRetriever, list[Document]]:
     bm25_retriever = BM25Retriever.from_documents(chunked_documents)
     bm25_retriever.k = 5
 
-    embedding_model = HuggingFaceEmbeddings(model_name="embeddings/gte-large-en-v1.5", model_kwargs={"device": "cpu", "trust_remote_code": True})
-    print("HERE?")
+    embedding_model = HuggingFaceEmbeddings(model_name="embeddings/gte-large-en-v1.5", model_kwargs={"device": "cuda", "trust_remote_code": True})
 
     vector_db = Chroma.from_documents(
         documents=chunked_documents,
@@ -42,12 +41,17 @@ def load_passages()->tuple[EnsembleRetriever, list[Document]]:
 
     ensemble_retriever = EnsembleRetriever(retrievers=[bm25_retriever, similarity_retriever], weights=[0.5, 0.5])
 
-    return ensemble_retriever, chunked_documents
+    return ensemble_retriever
 
 
 def load_qa()->pd.DataFrame:
+    """
+    Loads the question and answer dataset
+    """
     qa_data = pd.read_parquet("hf://datasets/rag-datasets/rag-mini-bioasq/data/test.parquet/part.0.parquet")
     qa_data.reset_index(inplace=True)
+    print(qa_data.head())
+    print(qa_data.columns)
     return qa_data
 
-
+load_qa()
