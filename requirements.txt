@@ -5,3 +5,6 @@ huggingface_hub
 langchain
 langchain-community
 transformers
+sentence-transformers
+rank_bm25
+chromadb

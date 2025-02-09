@@ -1,10 +1,9 @@
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_text_splitters import CharacterTextSplitter
 from langchain_community.retrievers import BM25Retriever
-from langchain.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_core.documents.base import Document
 from langchain.retrievers import EnsembleRetriever
-
 import pandas as pd
 
 
@@ -15,7 +14,6 @@ def load_passages()->tuple[EnsembleRetriever, list[Document]]:
     """
     passages = pd.read_parquet("hf://datasets/rag-datasets/rag-mini-bioasq/data/passages.parquet/part.0.parquet")
     passages.reset_index(inplace=True)
-
     print(passages.head())
 
     all_documents = []
@@ -31,12 +29,15 @@ def load_passages()->tuple[EnsembleRetriever, list[Document]]:
     bm25_retriever = BM25Retriever.from_documents(chunked_documents)
     bm25_retriever.k = 5
 
-    embedding_model = HuggingFaceEmbeddings(model_name="embeddings/gte-large-en-v1.5", model_kwargs={"device": "remote", "trust_remote_code": True})
+    embedding_model = HuggingFaceEmbeddings(model_name="embeddings/gte-large-en-v1.5", model_kwargs={"device": "cpu", "trust_remote_code": True})
+    print("HERE?")
+
     vector_db = Chroma.from_documents(
-        documents= chunked_documents, 
-        embedding= embedding_model,
+        documents=chunked_documents,
+        embedding=embedding_model,
         persist_directory="./db/"
     )
+
     similarity_retriever = vector_db.as_retriever(search_kwargs={"k": 5})
 
     ensemble_retriever = EnsembleRetriever(retrievers=[bm25_retriever, similarity_retriever], weights=[0.5, 0.5])
@@ -44,8 +45,9 @@ def load_passages()->tuple[EnsembleRetriever, list[Document]]:
     return ensemble_retriever, chunked_documents
 
 
-
 def load_qa()->pd.DataFrame:
     qa_data = pd.read_parquet("hf://datasets/rag-datasets/rag-mini-bioasq/data/test.parquet/part.0.parquet")
     qa_data.reset_index(inplace=True)
     return qa_data
+
+
