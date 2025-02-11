@@ -1,57 +1,45 @@
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_text_splitters import CharacterTextSplitter
-from langchain_community.retrievers import BM25Retriever
-from langchain_community.vectorstores import Chroma
 from langchain_core.documents.base import Document
-from langchain.retrievers import EnsembleRetriever
+from langchain_milvus.vectorstores import Milvus
 import pandas as pd
 
 
 
-def load_passages()->EnsembleRetriever:
+def load_passages() -> Milvus:
     """
     Loads passages, chunks them, loads in vector db, returns ensemble retriever
     """
-    passages = pd.read_parquet("hf://datasets/rag-datasets/rag-mini-bioasq/data/passages.parquet/part.0.parquet")
-    passages.reset_index(inplace=True)
-    print(passages.head())
-
+    passages = pd.read_csv("./dataset/passages.csv")
     all_documents = []
     for i in range(len(passages["passage"])): 
-        doc = Document(page_content=passages["passage"][i], metadata={"id": passages["id"][i]})
+        doc = Document(page_content=str(passages["passage"][i]))
         all_documents.append(doc)
 
-    print("Number of passages to load in the database: ", len(all_documents))
+    print("Number of passages to load in the database: ", len(passages["passage"]))
 
-    text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-    chunked_documents = text_splitter.split_documents(all_documents)
-
-    bm25_retriever = BM25Retriever.from_documents(chunked_documents)
-    bm25_retriever.k = 5
-
-    embedding_model = HuggingFaceEmbeddings(model_name="embeddings/gte-large-en-v1.5", model_kwargs={"device": "cuda", "trust_remote_code": True})
-
-    vector_db = Chroma.from_documents(
-        documents=chunked_documents,
-        embedding=embedding_model,
-        persist_directory="./db/"
-    )
-
-    similarity_retriever = vector_db.as_retriever(search_kwargs={"k": 5})
-
-    ensemble_retriever = EnsembleRetriever(retrievers=[bm25_retriever, similarity_retriever], weights=[0.5, 0.5])
-
-    return ensemble_retriever
+    embedding_model = HuggingFaceEmbeddings(model_name="embeddings/gte-base-en-v1.5", model_kwargs={"device": "cuda", "trust_remote_code": True})
+    
+    vectordb = Milvus.from_documents(
+            all_documents,
+            embedding_model,
+            connection_args={"uri": "./db/milvus.db"},
+            collection_name="langchain_example",
+            index_params={"metric_type": "COSINE"},
+            auto_id = False
+        )
+    print("Documents loaded in the vector db!")
+    return vectordb
 
 
 def load_qa()->pd.DataFrame:
     """
     Loads the question and answer dataset
     """
-    qa_data = pd.read_parquet("hf://datasets/rag-datasets/rag-mini-bioasq/data/test.parquet/part.0.parquet")
-    qa_data.reset_index(inplace=True)
-    print(qa_data.head())
+    qa_data = pd.read_csv("./dataset/dataset_qa.csv")
     print(qa_data.columns)
     return qa_data
 
-load_qa()
+
+
+
+
