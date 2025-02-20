@@ -103,6 +103,72 @@ def improved_judge_prompt_llama3() -> PromptTemplate:
 
     return PromptTemplate(template=prompt, input_variables=["answer", "question"])
 
+def improved_judge_prompt_llama_chat() -> PromptTemplate: 
+    """
+    Returns a prompt for the improved judge version for RAG Q&A. 
+    Propmt taken from: https://huggingface.co/learn/cookbook/en/llm_judge
+    """
+    prompt = """
+        You will be given a user_question and system_answer couple.
+        Your task is to provide a 'total rating' scoring how well the system_answer answers the user concerns expressed in the user_question.
+        Give your answer on a scale of 1 to 4, where 1 means that the system_answer is not helpful at all, and 4 means that the system_answer completely and helpfully addresses the user_question.
+
+        Here is the scale you should use to build your answer:
+        1: The system_answer is terrible: completely irrelevant to the question asked, or very partial
+        2: The system_answer is mostly not helpful: misses some key aspects of the question
+        3: The system_answer is mostly helpful: provides support, but still could be improved
+        4: The system_answer is excellent: relevant, direct, detailed, and addresses all the concerns raised in the question
+
+        Provide your feedback as follows:
+
+        Total rating: (your rating, as a number between 1 and 4)
+
+        You MUST provide values for 'Evaluation:' and 'Total rating:' in your answer.
+
+        Now here are the question and answer.
+
+        Question: {question}
+        Answer: {answer}
+
+        If you give a correct rating, I'll give you 100 H100 GPUs to start your AI company.
+
+        Total rating: """
+
+    return PromptTemplate(template=prompt, input_variables=["answer", "question"])
+
+def improved_judge_prompt_llama_chat_mistral() -> PromptTemplate: 
+    """
+    Returns a prompt for the improved judge version for RAG Q&A. 
+    Propmt taken from: https://huggingface.co/learn/cookbook/en/llm_judge
+    """
+    prompt = """[INST]
+        You will be given a user_question and system_answer couple.
+        Your task is to provide a 'total rating' scoring how well the system_answer answers the user concerns expressed in the user_question.
+        Give your answer on a scale of 1 to 4, where 1 means that the system_answer is not helpful at all, and 4 means that the system_answer completely and helpfully addresses the user_question.
+
+        Here is the scale you should use to build your answer:
+        1: The system_answer is terrible: completely irrelevant to the question asked, or very partial
+        2: The system_answer is mostly not helpful: misses some key aspects of the question
+        3: The system_answer is mostly helpful: provides support, but still could be improved
+        4: The system_answer is excellent: relevant, direct, detailed, and addresses all the concerns raised in the question
+
+        Provide your feedback as follows:
+
+        Total rating: (your rating, as a number between 1 and 4)
+
+        You MUST provide values for 'Evaluation:' and 'Total rating:' in your answer.
+
+        Now here are the question and answer.
+
+        Question: {question}
+        Answer: {answer}
+
+        If you give a correct rating, I'll give you 100 H100 GPUs to start your AI company.
+
+        Total rating: [/INST]"""
+
+    return PromptTemplate(template=prompt, input_variables=["answer", "question"])
+
 
 def improved_judge_prompt(model_name:str) -> PromptTemplate: 
     """
@@ -110,5 +176,9 @@ def improved_judge_prompt(model_name:str) -> PromptTemplate:
     """
     if model_name.lower().find("llama-3") >=0 :
         return improved_judge_prompt_llama3()
+    elif model_name.lower().find("llama") >=0 and model_name.lower().find("chat") >=0:
+        return improved_judge_prompt_llama_chat()
+    elif model_name.lower().find("mistral") >=0 or model_name.lower().find("mixtral") >=0:
+        return improved_judge_prompt_llama_chat_mistral()
     else:
         raise ValueError("Model name not supported")

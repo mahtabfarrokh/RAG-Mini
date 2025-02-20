@@ -9,9 +9,6 @@ from data_loader import load_passages, load_qa
 class rag_pipeline:
     def __init__(self, model_name: str):
         self.model_name = model_name
-        self.retriever = load_passages()
-        self.qa_data = load_qa()
-        self.hf = self.load_pipeline()
         self.batch_size = 8
         self.output_folder = "output/"
         if not os.path.exists(self.output_folder):
@@ -38,9 +35,14 @@ class rag_pipeline:
         hf= HuggingFacePipeline(pipeline= pipeline_llm, model_kwargs={"temperature": 0})
 
         return hf
-    
+
+
     def run_pipeline(self) -> str:
-        print("Running the pipeline...")
+        print("Load data and llm...")
+        self.retriever = load_passages()
+        self.qa_data = load_qa()
+        self.hf = self.load_pipeline()
+        print("Running the pipeline...") 
         prompt = load_prompt(self.model_name)
         self.prompt_chain = prompt | self.hf
         output = [] 
